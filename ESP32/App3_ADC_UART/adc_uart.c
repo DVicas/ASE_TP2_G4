@@ -61,15 +61,35 @@ void init(void) {
     esp_rom_gpio_connect_in_signal(DEFAULT_UART_TX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), false);
 }
 
-static void uart_read_task(void *arg){
+static void task1(void *arg){
     while (1) {
         
         const int len = sizeof(adc_reading);
         const int txBytes = uart_write_bytes(UART_NUM_1, &adc_reading, len);
         printf("UART0 sending to UART1: %d\n", adc_reading);
-
+        ESP_LOGI("task1", "Wrote %d bytes", txBytes);
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
+}
+
+static void task2(void *arg)
+{
+    static const char *TASK_TAG = "task2";
+    esp_log_level_set(TASK_TAG, ESP_LOG_INFO);
+    uint8_t* data = (uint8_t*) malloc(BUF_SIZE+1);
+    while (1) {
+        const int rxBytes = uart_read_bytes(UART_NUM_0, data, BUF_SIZE, 1000 / portTICK_RATE_MS);
+        if (rxBytes > 0) {
+            data[rxBytes] = 0;
+            ESP_LOGI(TASK_TAG, "Read %d bytes: '%s'", rxBytes, data);
+            ESP_LOG_BUFFER_HEXDUMP(TASK_TAG, data, rxBytes, ESP_LOG_INFO);
+            uint8_t *b;
+            b = &data;
+
+            printf("UART1 received from UART0: %d\n", (int)*b);
+        }
+    }
+    free(data);
 }
 
 void app_main(void)
@@ -95,6 +115,7 @@ void app_main(void)
         printf("Raw: %d\tVoltage: %dmV\n", adc_reading, voltage);
         vTaskDelay(pdMS_TO_TICKS(1000));
 
-        xTaskCreate(uart_read_task, "uart_read_task", 2048, NULL, 10, NULL);
+        xTaskCreate(task1, "task1", 2048, NULL, 10, NULL);
+        xTaskCreate(task2, "task2", 2048, NULL, 10, NULL);
     }
 }
