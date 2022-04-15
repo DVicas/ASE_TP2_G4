@@ -47,7 +47,7 @@
 #define LEDC_HS_CH3_CHANNEL    LEDC_CHANNEL_3
 
 #define LEDC_TEST_CH_NUM       (4)
-#define LEDC_TEST_DUTY         (4000)
+#define LEDC_TEST_DUTY         (4095)
 #define LEDC_TEST_FADE_TIME    (3000)
 
 /*
@@ -83,11 +83,6 @@ void app_main(void)
         .clk_cfg = LEDC_USE_APB_CLK,           // Auto select the source clock
     };
     // Set configuration of timer0 for high speed channels
-    ledc_timer_config(&ledc_timer);
-
-    // Prepare and set configuration of timer1 for low speed channels
-    ledc_timer.speed_mode = LEDC_HS_MODE;
-    ledc_timer.timer_num = LEDC_HS_TIMER;
     ledc_timer_config(&ledc_timer);
 
     /*
@@ -129,7 +124,7 @@ void app_main(void)
             .speed_mode = LEDC_HS_MODE,
             .hpoint     = 0,
             .timer_sel  = LEDC_HS_TIMER,
-            .flags.output_invert = 1
+            .flags.output_invert = 0
         },
         {
             .channel    = LEDC_HS_CH3_CHANNEL,
@@ -138,7 +133,7 @@ void app_main(void)
             .speed_mode = LEDC_HS_MODE,
             .hpoint     = 0,
             .timer_sel  = LEDC_HS_TIMER,
-            .flags.output_invert = 1
+            .flags.output_invert = 0
         },
     };
 
@@ -148,53 +143,25 @@ void app_main(void)
     }
 
     // Initialize fade service.
-    ledc_fade_func_install(0);
-    ledc_cbs_t callbacks = {
-        .fade_cb = cb_ledc_fade_end_event
-    };
-    SemaphoreHandle_t counting_sem = xSemaphoreCreateCounting(LEDC_TEST_CH_NUM, 0);
+    // ledc_fade_func_install(0);
+    // ledc_cbs_t callbacks = {
+    //     .fade_cb = cb_ledc_fade_end_event
+    // };
+    // SemaphoreHandle_t counting_sem = xSemaphoreCreateCounting(LEDC_TEST_CH_NUM, 0);
 
-    for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
-        ledc_cb_register(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, &callbacks, (void *) counting_sem);
-    }
+    // for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
+    //     ledc_cb_register(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, &callbacks, (void *) counting_sem);
+    // }
 
     while (1) {
-        printf("1. LEDC fade up to duty = %d\n", LEDC_TEST_DUTY);
-        for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
-            ledc_set_fade_with_time(ledc_channel[ch].speed_mode,
-                    ledc_channel[ch].channel, LEDC_TEST_DUTY, LEDC_TEST_FADE_TIME);
-            ledc_fade_start(ledc_channel[ch].speed_mode,
-                    ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
-        }
-
-        for (int i = 0; i < LEDC_TEST_CH_NUM; i++) {
-            xSemaphoreTake(counting_sem, portMAX_DELAY);
-        }
-
-        printf("2. LEDC fade down to duty = 0\n");
-        for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
-            ledc_set_fade_with_time(ledc_channel[ch].speed_mode,
-                    ledc_channel[ch].channel, 0, LEDC_TEST_FADE_TIME);
-            ledc_fade_start(ledc_channel[ch].speed_mode,
-                    ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
-        }
-
-        for (int i = 0; i < LEDC_TEST_CH_NUM; i++) {
-            xSemaphoreTake(counting_sem, portMAX_DELAY);
-        }
-
         printf("3. LEDC set duty = %d without fade\n", LEDC_TEST_DUTY);
         for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
-            ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, LEDC_TEST_DUTY);
-            ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
-        }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        printf("4. LEDC set duty = 0 without fade\n");
-        for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
-            ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, 0);
-            ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
-        }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+            for (size_t i = 0; i < 4094; i+=2)
+            {
+                ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, i);
+                ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
+                vTaskDelay(100 / portTICK_PERIOD_MS);
+            }    
+        }        
     }
 }
