@@ -22,7 +22,7 @@
 
 #define LEDC_TEST_CH_NUM       (4)
 #define LEDC_TEST_DUTY         (4095)
-#define LEDC_TEST_FADE_TIME    (3000)
+// #define LEDC_TEST_FADE_TIME    (3000)
 
 /* I2C Configuration */
 #define I2C_MASTER_SCL_IO           12                         /*!< GPIO number used for I2C master clock */
@@ -127,21 +127,30 @@ void app_main(void) {
 
 
     uint8_t data;
+    int duty[3];
     ESP_ERROR_CHECK(i2c_master_init());
 
     while (1) {
         ESP_ERROR_CHECK(sensor_read(SENSOR_ADDR, &data, 1));
         ESP_LOGI(TAG, "Val = %d", data);
 
-        // for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
-        //     for (size_t i = 0; i < 4094; i+=2)
-        //     {
-        //         ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, i);
-        //         ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
-        //         vTaskDelay(100 / portTICK_PERIOD_MS);
-        //     }    
-        // }      
+        duty[0] = 0;
+        duty[1] = 0;
+        duty[2] = 0;
+        if (data >= 27) {
+            if (data >= 34) duty[2] = 4094;
+            else duty[2] = ((26 - data) * -1) * 511.75; 
+        } else if (data >= 22 && data <= 26) {
+            duty[1] = ((21 - data) * -1) * 818.8;
+        } else if (data <= 21) {
+            if (data <= 14)  duty[0] = 4094;
+            else duty[0] = ((13 - data) * -1) * 511.75;
+        }
+        for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
+            ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, duty[ch]);
+            ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
+        }
 
-        vTaskDelay(SAMPLE_RATE_MS / portTICK_PERIOD_MS);  
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
