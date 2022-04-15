@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/diogo/Documents/ASE/ASE_TP2_G4/ESP32/App1_I2C_PWM/ledc_fade/build/CMakeFiles/bootloader
+/home/diogo/Documents/ASE/ASE_TP2_G4/ESP32/App1_I2C_PWM/ledc_fade/build/CMakeFiles/bootloader.rule
+/home/diogo/Documents/ASE/ASE_TP2_G4/ESP32/App1_I2C_PWM/ledc_fade/build/CMakeFiles/bootloader-complete.rule
+/home/diogo/Documents/ASE/ASE_TP2_G4/ESP32/App1_I2C_PWM/ledc_fade/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/home/diogo/Documents/ASE/ASE_TP2_G4/ESP32/App1_I2C_PWM/ledc_fade/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/diogo/Documents/ASE/ASE_TP2_G4/ESP32/App1_I2C_PWM/ledc_fade/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/diogo/Documents/ASE/ASE_TP2_G4/ESP32/App1_I2C_PWM/ledc_fade/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/diogo/Documents/ASE/ASE_TP2_G4/ESP32/App1_I2C_PWM/ledc_fade/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/diogo/Documents/ASE/ASE_TP2_G4/ESP32/App1_I2C_PWM/ledc_fade/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/diogo/Documents/ASE/ASE_TP2_G4/ESP32/App1_I2C_PWM/ledc_fade/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
