@@ -22,7 +22,7 @@
 
 #define LEDC_TEST_CH_NUM       (4)
 #define LEDC_TEST_DUTY         (4095)
-// #define LEDC_TEST_FADE_TIME    (3000)
+#define LEDC_TEST_FADE_TIME    (500)
 
 /* I2C Configuration */
 #define I2C_MASTER_SCL_IO           12                         /*!< GPIO number used for I2C master clock */
@@ -38,6 +38,18 @@
 
 
 static const char* TAG = "App1";
+
+static bool cb_ledc_fade_end_event(const ledc_cb_param_t *param, void *user_arg)
+{
+    portBASE_TYPE taskAwoken = pdFALSE;
+
+    if (param->event == LEDC_FADE_END_EVT) {
+        SemaphoreHandle_t counting_sem = (SemaphoreHandle_t) user_arg;
+        xSemaphoreGiveFromISR(counting_sem, &taskAwoken);
+    }
+
+    return (taskAwoken == pdTRUE);
+}
 
 static esp_err_t sensor_read(uint8_t reg_addr, uint8_t *data, size_t len)
 {
@@ -125,6 +137,16 @@ void app_main(void) {
         ledc_channel_config(&ledc_channel[ch]);
     }
 
+    // Initialize fade service.
+    ledc_fade_func_install(0);
+    ledc_cbs_t callbacks = {
+        .fade_cb = cb_ledc_fade_end_event
+    };
+    SemaphoreHandle_t counting_sem = xSemaphoreCreateCounting(LEDC_TEST_CH_NUM, 0);
+
+    for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
+        ledc_cb_register(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, &callbacks, (void *) counting_sem);
+    }
 
     uint8_t data;
     int duty[3];
@@ -139,18 +161,30 @@ void app_main(void) {
         duty[2] = 0;
         if (data >= 27) {
             if (data >= 34) duty[2] = 4094;
-            else duty[2] = ((26 - data) * -1) * 511.75; 
+            else duty[2] = ((26 - data) * -1) * 511; 
         } else if (data >= 22 && data <= 26) {
-            duty[1] = ((21 - data) * -1) * 818.8;
+            duty[1] = ((21 - data) * -1) * 818;
         } else if (data <= 21) {
             if (data <= 14)  duty[0] = 4094;
-            else duty[0] = ((13 - data) * -1) * 511.75;
-        }
-        for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
-            ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, duty[ch]);
-            ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
+            else duty[0] = ((13 - data) * -1) * 511;
         }
 
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        ESP_LOGI(TAG, "duty = %d, %d, %d", duty[0], duty[1], duty[2]);
+
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
+            // ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, duty[ch]);
+            // ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
+
+            ledc_set_fade_with_time(ledc_channel[ch].speed_mode,
+                    ledc_channel[ch].channel, duty[ch], LEDC_TEST_FADE_TIME);
+            ledc_fade_start(ledc_channel[ch].speed_mode,
+                    ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
+
+            for (int i = 0; i < LEDC_TEST_CH_NUM; i++) {
+                xSemaphoreTake(counting_sem, portMAX_DELAY);
+            }
+        }
+
     }
 }

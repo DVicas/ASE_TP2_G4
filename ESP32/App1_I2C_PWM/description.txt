@@ -1,0 +1,2 @@
+Trata-se de uma aplicação que, conforme o valor de temperatura medido pelo sensor, é representadado esse valor em 3 LED's, em que cada uma representa uma gama de valores, 1 vermelha que representa valores entre 15-21º, 1 verde entre 22-26º e 1 vermelha entre 27-34º.
+Comunicação com o sensor é feito por I2C e, dependendo do valor da temperatura, a intensidade das LED's é manipulada através de PWM.
