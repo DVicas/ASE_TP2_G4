@@ -39,26 +39,14 @@
 
 static const char* TAG = "App1";
 
-static bool cb_ledc_fade_end_event(const ledc_cb_param_t *param, void *user_arg)
-{
-    portBASE_TYPE taskAwoken = pdFALSE;
-
-    if (param->event == LEDC_FADE_END_EVT) {
-        SemaphoreHandle_t counting_sem = (SemaphoreHandle_t) user_arg;
-        xSemaphoreGiveFromISR(counting_sem, &taskAwoken);
-    }
-
-    return (taskAwoken == pdTRUE);
-}
-
 static esp_err_t sensor_read(uint8_t reg_addr, uint8_t *data, size_t len)
 {
     return i2c_master_read_from_device(I2C_MASTER_NUM, SENSOR_ADDR, data, \
     len, I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 }
 
-static esp_err_t i2c_master_init(void)
-{
+static esp_err_t i2c_master_init(void) {
+
     int i2c_master_port = I2C_MASTER_NUM;
 
     i2c_config_t conf = {
@@ -79,18 +67,17 @@ static esp_err_t i2c_master_init(void)
 void app_main(void) {
     
     int ch;
+    uint8_t data;
+    int duty[3];
 
-    /*
-     * Prepare and set configuration of timers
-     * that will be used by LED Controller
-     */
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = LEDC_TIMER_12_BIT,  // resolution of PWM duty
         .freq_hz = 10000,                      // frequency of PWM signal
         .speed_mode = LEDC_HS_MODE,            // timer mode
         .timer_num = LEDC_HS_TIMER,            // timer index
-        .clk_cfg = LEDC_USE_APB_CLK,           // Auto select the source clock
+        .clk_cfg = LEDC_USE_APB_CLK,           
     };
+    
     ledc_timer_config(&ledc_timer);
 
     ledc_channel_config_t ledc_channel[LEDC_TEST_CH_NUM] = {
@@ -121,15 +108,6 @@ void app_main(void) {
             .timer_sel  = LEDC_HS_TIMER,
             .flags.output_invert = 0
         },
-        {
-            .channel    = LEDC_HS_CH3_CHANNEL,
-            .duty       = 0,
-            .gpio_num   = LEDC_HS_CH3_GPIO,
-            .speed_mode = LEDC_HS_MODE,
-            .hpoint     = 0,
-            .timer_sel  = LEDC_HS_TIMER,
-            .flags.output_invert = 0
-        },
     };
 
     // Set LED Controller with previously prepared configuration
@@ -137,19 +115,6 @@ void app_main(void) {
         ledc_channel_config(&ledc_channel[ch]);
     }
 
-    // Initialize fade service.
-    ledc_fade_func_install(0);
-    ledc_cbs_t callbacks = {
-        .fade_cb = cb_ledc_fade_end_event
-    };
-    SemaphoreHandle_t counting_sem = xSemaphoreCreateCounting(LEDC_TEST_CH_NUM, 0);
-
-    for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
-        ledc_cb_register(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, &callbacks, (void *) counting_sem);
-    }
-
-    uint8_t data;
-    int duty[3];
     ESP_ERROR_CHECK(i2c_master_init());
 
     while (1) {
@@ -171,20 +136,10 @@ void app_main(void) {
 
         ESP_LOGI(TAG, "duty = %d, %d, %d", duty[0], duty[1], duty[2]);
 
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
         for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
-            // ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, duty[ch]);
-            // ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
-
-            ledc_set_fade_with_time(ledc_channel[ch].speed_mode,
-                    ledc_channel[ch].channel, duty[ch], LEDC_TEST_FADE_TIME);
-            ledc_fade_start(ledc_channel[ch].speed_mode,
-                    ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
-
-            for (int i = 0; i < LEDC_TEST_CH_NUM; i++) {
-                xSemaphoreTake(counting_sem, portMAX_DELAY);
-            }
+            ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, duty[ch]);
+            ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
         }
-
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
