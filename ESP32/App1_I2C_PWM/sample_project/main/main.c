@@ -17,10 +17,8 @@
 #define LEDC_HS_CH1_CHANNEL    LEDC_CHANNEL_1
 #define LEDC_HS_CH2_GPIO       (25)
 #define LEDC_HS_CH2_CHANNEL    LEDC_CHANNEL_2
-#define LEDC_HS_CH3_GPIO       (26)
-#define LEDC_HS_CH3_CHANNEL    LEDC_CHANNEL_3
 
-#define LEDC_TEST_CH_NUM       (4)
+#define LEDC_TEST_CH_NUM       (3)
 #define LEDC_TEST_DUTY         (4095)
 #define LEDC_TEST_FADE_TIME    (500)
 
@@ -130,7 +128,7 @@ void app_main(void) {
         } else if (data >= 22 && data <= 26) {
             duty[1] = ((21 - data) * -1) * 818;
         } else if (data <= 21) {
-            if (data <= 14)  duty[0] = 4094;
+            if (data <= 14)  duty[0] = 0;
             else duty[0] = ((13 - data) * -1) * 511;
         }
 
