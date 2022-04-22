@@ -1,0 +1,3 @@
+Este aplicação consiste em ler valores do ADC e através desse valor calcular a voltagem. Estes valores só são apresentados quando é premida uma tecla que será lida pela UART e escrita no ESPLOG. Foi também implementado power management, este funciona quando é premida a tecla 's', o kit irá dormir durante 2 segundos.
+
+O trabalho teve contribuição do TP2_G3.
