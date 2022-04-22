@@ -1,0 +1,3 @@
+Este aplicação consiste em escrever valores aleatórios na eeprom, para de seguida os ler. Estes valores são seguidamente enviados para a DAC, onde seram convertidos para valores de tensão.
+
+Configurações de SPI foram disponibilizadas pelo TP2_G3
