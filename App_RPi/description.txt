@@ -1,0 +1,1 @@
+Esta aplicação consiste no desenvolvimento de um mobile hotspot. Este hotspot guarda ip's estáticos de certos utilizadores na eeprom, associando o seu mac address ao ip
